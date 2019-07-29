@@ -109,16 +109,30 @@ class FlaskLambda(Flask):
             print('call as aws lambda')
             response = LambdaResponse()
 
-            body = next(self.wsgi_app(
-                make_environ(event),
-                response.start_response
-            ))
+            hasBody = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
 
-            return {
-                'statusCode': response.status,
-                'headers': response.response_headers,
-                'body': body.decode('utf-8')
-            }
+            if event['httpMethod'] in hasBody:
+                body = next(self.wsgi_app(
+                    make_environ(event),
+                    response.start_response
+                ))
+
+                return {
+                    'statusCode': response.status,
+                    'headers': response.response_headers,
+                    'body': body.decode('utf-8')
+                }
+
+            else:
+                body = self.wsgi_app(
+                    make_environ(event),
+                    response.start_response
+                )
+
+                return {
+                    'statusCode': response.status,
+                    'headers': response.response_headers
+                }
 
         except Exception as e:
             print('unexpected error', e)
